@@ -120,4 +120,3 @@ Os seguintes aspectos serão considerados na avaliação:
 ---
 
 Boa sorte! Estamos ansiosos para conhecer o seu trabalho e potencial.
-

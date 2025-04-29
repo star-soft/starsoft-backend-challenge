@@ -1,0 +1,90 @@
+# cSpell:ignore bitnami ulimits memlock starsoft
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: orders-api
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/app:delegated
+      - /app/node_modules
+      - ./starsoft-backend:/app/starsoft-backend
+    depends_on:
+      - postgres
+      - kafka
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_NODE=http://elasticsearch:9200
+      - KAFKA_BROKER=kafka:9092
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:13-alpine
+    container_name: orders-postgres
+    ports:
+      - '5433:5432'
+    environment:
+      - POSTGRES_DB=orders_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - app-network
+
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+    networks:
+      - app-network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - app-network
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+networks:
+  app-network:
+
+volumes:
+  postgres_data:
+  elasticsearch_data:
