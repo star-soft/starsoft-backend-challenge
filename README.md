@@ -175,7 +175,6 @@ Para facilitar a avaliação, inclua instruções ou script mostrando:
 2. Criar sala com no mínimo 16 assentos, a R$ 25,00 cada
 3. Simular
  3.1. 2 usuários tentando reservar o mesmo assento simultaneamente
- 3.2  Simular um deadlock e a recuperação dele
 4. Verificar quantidade de reservas geradas
 5. Comprovar o funcionamento do fluxo de pagamento do assento
 ```
@@ -198,8 +197,8 @@ Este é um desafio que reflete problemas reais enfrentados em produção. **Não
 
 1. ✅ Garantir que nenhum assento seja vendido duas vezes
 2. ✅ Sistema de mensageria confiável
-4. ✅ Código limpo e bem estruturado
-5. ✅ Documentação clara
+3. ✅ Código limpo e bem estruturado
+4. ✅ Documentação clara
 
 **Qualidade > Quantidade**. É melhor implementar poucas funcionalidades muito bem feitas do que muitas de forma superficial.
 
