@@ -262,7 +262,6 @@ Para facilitar a avaliação, crie um script ou documento mostrando:
 ### Prazo
 
 - **Prazo sugerido**: 7 dias corridos a partir do recebimento do desafio
-- **Prazo mínimo aceitável**: 5 dias (para candidatos com disponibilidade limitada)
 
 ### Dúvidas e Suporte
 
