@@ -24,7 +24,7 @@ No momento da abertura das vendas às **10:00:00**, você terá:
 
 - **100 ingressos VIP** disponíveis
 - **50.000+ usuários** tentando comprar no exato mesmo segundo
-- Múltiplas instâncias da aplicação rodando (5+ pods/containers)
+- Múltiplas instâncias da aplicação rodando simultaneamente
 - Necessidade de garantir que nenhum ingresso seja vendido duas vezes
 - Reservas temporárias enquanto o pagamento é processado (30 segundos)
 - Cancelamento automático se o pagamento não for confirmado
@@ -37,9 +37,9 @@ No momento da abertura das vendas às **10:00:00**, você terá:
 Configure um ambiente de desenvolvimento utilizando **Docker** e **Docker Compose**, incluindo:
 
 - Aplicação Node.js com **NestJS**
-- Banco de dados **PostgreSQL**
-- **Redis**
-- Servidor **Kafka**
+- **Banco de dados relacional** (escolha: PostgreSQL, MySQL, etc.)
+- **Sistema de mensageria** (escolha: Kafka, RabbitMQ, etc.)
+- **Banco de dados distribuído** para cache e coordenação (escolha: Redis, Memcached, etc.)
 - A aplicação deve ser iniciada com um único comando (`docker-compose up`)
 
 #### 2. **API RESTful - Gestão de Ingressos**
@@ -82,18 +82,18 @@ Implemente uma API RESTful com as seguintes operações:
 - **Endpoint de métricas lifetime** por evento (total de vendas, receita acumulada, etc.)
 - **Endpoint de métricas globais** (todos os eventos agregados)
 
-#### 3. **Controle de Concorrência com Redis** ⭐ **CRÍTICO**
+#### 3. **Controle de Concorrência Distribuída** ⭐ **CRÍTICO**
 
-- Usar **Redis** para coordenação entre múltiplas instâncias
-- Garantir que apenas UMA instância/pod consiga processar uma reserva específica por vez
+- Usar **banco de dados distribuído** para coordenação entre múltiplas instâncias
+- Garantir que apenas UMA instância consiga processar uma reserva específica por vez
 - Prevenir processamento duplicado da mesma requisição
 - Tratar conflitos de atualização concorrente
 - Sistema deve ser resiliente a falhas (processos que morrem, timeouts, etc.)
 - **Desafio**: Como garantir atomicidade e coordenação em um ambiente distribuído?
 
-#### 4. **Processamento Assíncrono com Kafka** ⭐ **CRÍTICO**
+#### 4. **Processamento Assíncrono com Mensageria** ⭐ **CRÍTICO**
 
-- Usar **Kafka** para comunicação assíncrona entre componentes do sistema
+- Usar **sistema de mensageria** para comunicação assíncrona entre componentes do sistema
 - Publicar eventos quando: reserva criada, pagamento confirmado, reserva expirada, ingresso liberado
 - Consumir e processar esses eventos de forma confiável
 - **Desafio**: Como garantir que cada evento seja processado exatamente uma vez, sem duplicações ou perda de mensagens?
@@ -103,7 +103,7 @@ Implemente uma API RESTful com as seguintes operações:
 
 **5.1. Consumer de Métricas**
 
-- Consumir eventos do **Kafka** para calcular e armazenar métricas
+- Consumir eventos do **sistema de mensageria** para calcular e armazenar métricas
 - **Métricas Diárias por Evento** (deve ser calculada nos consumers):
   - Total de ingressos vendidos no dia
   - Total de reservas criadas no dia
@@ -128,13 +128,13 @@ Implemente uma API RESTful com as seguintes operações:
 #### 7. **Observabilidade e Monitoramento**
 
 - Implementar logging estruturado (níveis: DEBUG, INFO, WARN, ERROR)
-- Endpoint de health check verificando estado dos serviços (PostgreSQL, Redis, Kafka)
+- Endpoint de health check verificando estado dos serviços (banco de dados, mensageria, cache)
 - (Opcional) Métricas com Prometheus
 
 #### 8. **Testes**
 
 - **Testes de Unidade**: Cobertura mínima de 60-70%, testar serviços e casos de uso críticos
-- Mockar dependências externas (banco de dados, Redis, Kafka)
+- Mockar dependências externas (banco de dados, cache, mensageria)
 
 #### 9. **Documentação da API**
 
@@ -168,13 +168,13 @@ Você deve projetar um schema que suporte:
 1. Cliente faz POST /tickets/reserve
 2. Sistema verifica disponibilidade com proteção contra concorrência
 3. Cria reserva temporária (válida por 30 segundos)
-4. Publica evento no Kafka
+4. Publica evento no sistema de mensageria
 5. Retorna ID da reserva
 
 6. Cliente faz POST /tickets/confirm-payment
 7. Sistema valida reserva (ainda não expirou?)
 8. Converte reserva em venda definitiva
-9. Publica evento de confirmação no Kafka
+9. Publica evento de confirmação no sistema de mensageria
 ```
 
 **Desafio**: Como garantir que 2 usuários não consigam reservar o mesmo ingresso ao mesmo tempo?
@@ -191,7 +191,7 @@ Você deve projetar um schema que suporte:
 
 - **Dead Letter Queue (DLQ)**: Mensagens que falharam após N tentativas vão para fila separada
 - **Retry Inteligente**: Sistema de retry com backoff exponencial para falhas transientes
-- **Processamento em Batch**: Processar mensagens do Kafka em lotes para melhor performance
+- **Processamento em Batch**: Processar mensagens em lotes para melhor performance
 - **Testes de Integração/Concorrência**: Simular múltiplos usuários e validar que nenhum ingresso é vendido duas vezes
 
 #### Busca e Analytics
@@ -236,8 +236,8 @@ Deve conter:
    - Como executar testes
 3. **Estratégias Implementadas**:
    - Como você resolveu race conditions?
-   - Como implementou locks distribuídos?
-   - Como garantiu exactly-once no Kafka?
+   - Qual tecnologia escolheu para coordenação distribuída e por quê?
+   - Qual sistema de mensageria escolheu e como garantiu exactly-once?
    - Como preveniu deadlocks?
 4. **Endpoints da API**: Lista completa com exemplos de uso
 5. **Decisões Técnicas**: Justifique escolhas importantes de design
@@ -276,8 +276,8 @@ Para facilitar a avaliação, crie um script ou documento mostrando:
 Este é um desafio complexo que reflete problemas reais enfrentados em produção. **Não esperamos que você implemente 100% dos requisitos**, especialmente os diferenciais. Priorize:
 
 1. ✅ Controle de concorrência correto
-2. ✅ Locks distribuídos funcionando
-3. ✅ Kafka com exactly-once
+2. ✅ Coordenação distribuída funcionando
+3. ✅ Sistema de mensageria com exactly-once
 4. ✅ Testes demonstrando cenários de concorrência
 5. ✅ Documentação clara
 
